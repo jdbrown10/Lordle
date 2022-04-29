@@ -56,7 +56,7 @@ public class PlayerController : MonoBehaviour
     public Image GetKeyboardImage(string letter)
     {
         // The letters on the keyboard are in uppercase, so first we need to make sure that the letter we check for is in uppercase
-        letter = letter.ToLower();
+        letter = letter.ToUpper();
 
         // Go through every key and return the one with the correct letter
         foreach (var keyboardLetter in keyboardCharacterButtons)

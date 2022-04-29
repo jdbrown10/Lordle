@@ -41,7 +41,8 @@ public class GameController : MonoBehaviour
 
     public GameObject popup;
 
-private Coroutine popupRoutine;
+    private Coroutine popupRoutine;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -140,6 +141,15 @@ private Coroutine popupRoutine;
 
     public void SubmitWord()
     {
+        if (currentRow > amountOfRows)
+        {
+            Debug.Log("No more rows available");
+            // Let the player know that they lost,
+            // and what the correct word was,
+            // this popup does not disappear
+            ShowPopup("You Lost!\n" + "Correct word was:" + correctWord, 0f, true);
+            return;
+        }
         // The players guess
         string guess = "";
 
@@ -153,15 +163,54 @@ private Coroutine popupRoutine;
         if (guess.Length != 5)
         {
             Debug.Log("Answer too short, must be 5 letters");
+             // Let the player know that the submitted word is too short
+            ShowPopup("Answer too short, must be 5 letters", 2f, false);
             return;
         }
 
+        // All words are in lowercase, so let's convert the guess to that as well
+        guess = guess.ToLower();
+
+        // Check if the word exists in the dictionary 
+        bool wordExists = false;
+        foreach (var word in dictionary)
+        {
+            if (guess == word)
+            {
+                wordExists = true;
+                break;
+            }
+        }
+        // If it didn't exist in the dictionary, does it exist in the other list
+        if (wordExists == false)
+        {
+            foreach (var word in guessingWords)
+            {
+                if (guess == word)
+                {
+                    wordExists = true;
+                    break;
+                }
+            }
+        }
+        if (wordExists == false)
+        {
+            // Let the player know that the submitted word is too short
+            ShowPopup("Word does not exist in dictionary!", 2f, false);
+            return;
+        }
+
+
         // Output the guess to the console
         Debug.Log("Player guess:" + guess);
-
+        CheckWord(guess);
+        
         // If the guess was correct, output that the player has won into the console
         if (guess == correctWord)
         {
+            // Let the player know that they won!
+            // This popup stays forever as well
+            ShowPopup("You win!", 0f, true);
             Debug.Log("Correct word!");
         }
         else
@@ -172,13 +221,6 @@ private Coroutine popupRoutine;
             currentWordBox = 0;
             currentRow++;
         }
-
-        if (currentRow > amountOfRows)
-        {
-            Debug.Log("No more rows available");
-            return;
-        }
-        
     }
 
     void CheckWord(string guess)
@@ -290,5 +332,37 @@ private Coroutine popupRoutine;
             }
 
         }
+    }
+
+    void ShowPopup(string message, float duration, bool stayForever)
+    {
+        // If a popup routine exists, we should stop that first,
+        // this makes sure that not 2 coroutines can run at the same time.
+        // Since we are using the same popup for every message, we only want one of these coroutines to run at any time
+        if (popupRoutine != null)
+        {
+            StopCoroutine(popupRoutine);
+        }
+        popupRoutine = StartCoroutine(ShowPopupRoutine(message, duration, stayForever));
+    }
+
+    IEnumerator ShowPopupRoutine(string message, float duration, bool stayForever = false)
+    {
+        // Set the message of the popup
+        popup.transform.GetChild(0).GetComponent<Text>().text = message;
+        // Activate the popup
+        popup.SetActive(true);
+        // If it should stay forever or not
+        if (stayForever)
+        {
+            while (true)
+            {
+                yield return null;
+            }
+        }
+        // Wait for the duration time
+        yield return new WaitForSeconds(duration);
+        // Deactivate the popup
+        popup.SetActive(false);
     }
 }
